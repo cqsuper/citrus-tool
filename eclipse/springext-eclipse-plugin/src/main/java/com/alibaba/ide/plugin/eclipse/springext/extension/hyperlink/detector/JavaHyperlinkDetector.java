@@ -81,11 +81,11 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector {
         return null;
     }
 
-    private static class JavaElementHyperlink implements IHyperlink {
+    public static class JavaElementHyperlink implements IHyperlink {
         private final IJavaElement element;
         private final IRegion region;
 
-        private JavaElementHyperlink(IRegion region, IJavaElement element) {
+        JavaElementHyperlink(IRegion region, IJavaElement element) {
             this.region = region;
             this.element = element;
         }
