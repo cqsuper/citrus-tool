@@ -1,10 +1,15 @@
 package com.alibaba.ide.plugin.eclipse.springext.extension.hyperlink.detector;
 
+import static com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil.getJavaProject;
+
 import java.io.IOException;
 import java.net.URL;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +27,7 @@ import com.alibaba.citrus.springext.support.SpringPluggableSchemaSourceInfo;
 import com.alibaba.citrus.springext.support.SpringSchemasSourceInfo;
 import com.alibaba.ide.plugin.eclipse.springext.extension.hyperlink.SchemaHyperlink;
 import com.alibaba.ide.plugin.eclipse.springext.extension.hyperlink.URLHyperlink;
+import com.alibaba.ide.plugin.eclipse.springext.extension.hyperlink.detector.JavaHyperlinkDetector.JavaElementHyperlink;
 
 public class HyperlinkDetectorUtil {
     public static IHyperlink[] createHyperlinks(@NotNull IRegion region, @NotNull Schema schema,
@@ -127,8 +133,34 @@ public class HyperlinkDetectorUtil {
                 }
             };
         }
+        
+        IHyperlink link4 = null;
+        String className = contrib.getImplementationClassName();
+        if(className!=null){
+        	IJavaProject javaProject = getJavaProject(project, true);
+        	if (javaProject != null && javaProject.exists()) {
+                try {
+                    IJavaElement element = javaProject.findType(className);
+                    if (element != null && element.exists()) {
+                    	link4= new JavaElementHyperlink(region, element){
 
-        return new IHyperlink[] { link1, link2, link3 };
+							@Override
+							public String getHyperlinkText() {
+								return String.format("Open ImplementationClass for Contribution '%s' - '%s'",
+			                            contrib.getName(), contrib.getConfigurationPoint().getNamespaceUri());
+							}
+                    		
+                    	};
+                    }
+                    }
+                catch (JavaModelException ignore) {
+                }
+                }
+                
+        }
+
+
+        return new IHyperlink[] { link1, link2, link3,link4 };
     }
 
     /**
