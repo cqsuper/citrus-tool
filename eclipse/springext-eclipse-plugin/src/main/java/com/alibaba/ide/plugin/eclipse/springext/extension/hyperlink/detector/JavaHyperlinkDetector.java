@@ -24,6 +24,7 @@ import org.eclipse.ui.PlatformUI;
 import com.alibaba.citrus.springext.ContributionType;
 
 public class JavaHyperlinkDetector extends AbstractHyperlinkDetector {
+
 	private final static Pattern	contirbutePattern	= Pattern.compile("[\\w]+\\s*=\\s*+([.$\\w]+)");
 
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
@@ -57,6 +58,7 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector {
 			String className = matcher.group(1);
 			return createJavaHyperlinks(document, className, new Region(lineInfo.getOffset() + matcher.start(1),
 			        className.length()));
+
 		}
 
 		return null;
