@@ -42,6 +42,7 @@ import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.undo.CreateFileOperation;
 import org.eclipse.ui.ide.undo.WorkspaceUndoUtil;
@@ -57,164 +58,193 @@ import com.alibaba.ide.plugin.eclipse.springext.SpringExtPlugin;
 public class SpringExtPluginUtil {
 	private static final String	JAR_FILE_PROTOCOL	= "jar:file:"; //$NON-NLS-1$
 	public static final String LINE_BR = "\r\n";
-	/**
-	 * 取得指定document所在的project。
-	 * <p/>
-	 * 参考实现：
-	 * {@link org.eclipse.jst.jsp.ui.internal.hyperlink.XMLJavaHyperlinkDetector#createHyperlink(String, IRegion, IDocument)}
-	 */
-	public static IProject getProjectFromDocument(IDocument document) {
-		// try file buffers
-		ITextFileBuffer textFileBuffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document);
 
-		if (textFileBuffer != null) {
-			IPath basePath = textFileBuffer.getLocation();
+    /**
+     * 取得指定document所在的project。
+     * <p/>
+     * 参考实现：
+     * {@link org.eclipse.jst.jsp.ui.internal.hyperlink.XMLJavaHyperlinkDetector#createHyperlink(String, IRegion, IDocument)}
+     */
+    public static IProject getProjectFromDocument(IDocument document) {
+        // try file buffers
+        ITextFileBuffer textFileBuffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(document);
 
-			if (basePath != null && !basePath.isEmpty()) {
-				IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(basePath.segment(0));
+        if (textFileBuffer != null) {
+            IPath basePath = textFileBuffer.getLocation();
 
-				if (basePath.segmentCount() > 1 && project.isAccessible()) {
-					return project;
-				}
-			}
-		}
+            if (basePath != null && !basePath.isEmpty()) {
+                IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(basePath.segment(0));
 
-		// fallback to SSE-specific knowledge
-		IStructuredModel model = null;
+                if (basePath.segmentCount() > 1 && project.isAccessible()) {
+                    return project;
+                }
+            }
+        }
 
-		try {
-			model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+        // fallback to SSE-specific knowledge
+        IStructuredModel model = null;
 
-			if (model != null) {
-				String baseLocation = model.getBaseLocation();
+        try {
+            model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
 
-				// URL fixup from the taglib index record
-				if (baseLocation.startsWith("jar:/file:")) { //$NON-NLS-1$
-					baseLocation = StringUtils.replace(baseLocation, "jar:/", "jar:"); //$NON-NLS-1$ //$NON-NLS-2$
-				}
+            if (model != null) {
+                String baseLocation = model.getBaseLocation();
 
-				/*
-				 * Handle opened TLD files from JARs on the Java Build Path by
-				 * finding a package fragment root for the same .jar file and
-				 * opening the class from there. Note that this might be from a
-				 * different Java project's build path than the TLD.
-				 */
-				if (baseLocation.startsWith(JAR_FILE_PROTOCOL)
-				        && baseLocation.indexOf('!') > JAR_FILE_PROTOCOL.length()) {
-					String baseFile = baseLocation.substring(JAR_FILE_PROTOCOL.length(), baseLocation.indexOf('!'));
-					IPath basePath = new Path(baseFile);
-					IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+                // URL fixup from the taglib index record
+                if (baseLocation.startsWith("jar:/file:")) { //$NON-NLS-1$
+                    baseLocation = StringUtils.replace(baseLocation, "jar:/", "jar:"); //$NON-NLS-1$ //$NON-NLS-2$
+                }
 
-					for (IProject project : projects) {
-						try {
-							if (project.isAccessible() && project.hasNature(JavaCore.NATURE_ID)) {
-								IJavaProject javaProject = JavaCore.create(project);
+                /*
+                 * Handle opened TLD files from JARs on the Java Build Path by
+                 * finding a package fragment root for the same .jar file and
+                 * opening the class from there. Note that this might be from a
+                 * different Java project's build path than the TLD.
+                 */
+                if (baseLocation.startsWith(JAR_FILE_PROTOCOL)
+                        && baseLocation.indexOf('!') > JAR_FILE_PROTOCOL.length()) {
+                    String baseFile = baseLocation.substring(JAR_FILE_PROTOCOL.length(), baseLocation.indexOf('!'));
+                    IPath basePath = new Path(baseFile);
+                    IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 
-								if (javaProject.exists()) {
-									IPackageFragmentRoot root = javaProject.findPackageFragmentRoot(basePath);
+                    for (IProject project : projects) {
+                        try {
+                            if (project.isAccessible() && project.hasNature(JavaCore.NATURE_ID)) {
+                                IJavaProject javaProject = JavaCore.create(project);
 
-									if (root != null) {
-										return javaProject.getProject();
-									}
-								}
-							}
-						} catch (CoreException ignored) {
-						}
-					}
-				} else {
-					IPath basePath = new Path(baseLocation);
+                                if (javaProject.exists()) {
+                                    IPackageFragmentRoot root = javaProject.findPackageFragmentRoot(basePath);
 
-					if (basePath.segmentCount() > 1) {
-						IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(basePath.segment(0));
+                                    if (root != null) {
+                                        return javaProject.getProject();
+                                    }
+                                }
+                            }
+                        } catch (CoreException ignored) {
+                        }
+                    }
+                } else {
+                    IPath basePath = new Path(baseLocation);
 
-						if (project != null && project.isAccessible()) {
-							return project;
-						}
-					}
-				}
-			}
-		} finally {
-			if (model != null) {
-				model.releaseFromRead();
-			}
-		}
+                    if (basePath.segmentCount() > 1) {
+                        IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(basePath.segment(0));
 
-		// Try get project from editor input
-		IEditorInput input = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor()
-		        .getEditorInput();
+                        if (project != null && project.isAccessible()) {
+                            return project;
+                        }
+                    }
+                }
+            }
+        } finally {
+            if (model != null) {
+                model.releaseFromRead();
+            }
+        }
 
-		if (input instanceof IProjectAware) {
-			return ((IProjectAware) input).getProject();
-		}
+        // Try get project from editor input
+        IEditorInput input = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor()
+                .getEditorInput();
 
-		return null;
-	}
+        return getProjectFromInput(input);
+    }
 
-	/**
-	 * 找到target file所对应的source file。
-	 */
-	public static IFile findSourceFile(@NotNull IFile targetFile) {
-		IJavaProject javaProject = getJavaProject(targetFile.getProject(), false);
+    public static IProject getProjectFromInput(IEditorInput input) {
+        if (input instanceof IProjectAware) {
+            return ((IProjectAware) input).getProject();
+        }
 
-		if (javaProject != null) {
-			// 确保targetFile在output location
-			IPath targetPath = targetFile.getFullPath();
-			IPath outputLocation = null;
+        if (input instanceof IFileEditorInput) {
+            return ((IFileEditorInput) input).getFile().getProject();
+        }
 
-			try {
-				outputLocation = javaProject.getOutputLocation();
-			} catch (JavaModelException ignored) {
-			}
+        return null;
+    }
 
-			if (outputLocation != null) {
-				// 取得相对路径
-				IPath path = targetPath.makeRelativeTo(outputLocation);
+    /**
+     * 找到target file所对应的source file。
+     */
+    public static IFile findSourceFile(@NotNull IFile targetFile) {
+        IJavaProject javaProject = getJavaProject(targetFile.getProject(), false);
 
-				// 从每个source location中查找文件。
-				IPackageFragmentRoot[] roots = null;
+        if (javaProject != null) {
+            // 确保targetFile在output location
+            IPath targetPath = targetFile.getFullPath();
+            IPath outputLocation = null;
 
-				try {
-					roots = javaProject.getPackageFragmentRoots();
-				} catch (JavaModelException ignored) {
-				}
+            try {
+                outputLocation = javaProject.getOutputLocation();
+            } catch (JavaModelException ignored) {
+            }
 
-				if (roots != null) {
-					for (IPackageFragmentRoot root : roots) {
-						if (root.getResource() instanceof IFolder) {
-							IFolder folder = (IFolder) root.getResource();
-							IFile sourceFile = folder.getFile(path);
+            if (outputLocation != null) {
+                // 取得相对路径
+                IPath path = targetPath.makeRelativeTo(outputLocation);
 
-							if (sourceFile != null && sourceFile.exists()) {
-								return sourceFile;
-							}
-						}
-					}
-				}
-			}
-		}
+                // 从每个source location中查找文件。
+                IPackageFragmentRoot[] roots = null;
 
-		return targetFile;
-	}
+                try {
+                    roots = javaProject.getPackageFragmentRoots();
+                } catch (JavaModelException ignored) {
+                }
 
-	@Nullable
-	public static IJavaProject getJavaProject(IProject project, boolean create) {
-		IJavaProject javaProject = null;
+                if (roots != null) {
+                    for (IPackageFragmentRoot root : roots) {
+                        if (root.getResource() instanceof IFolder) {
+                            IFolder folder = (IFolder) root.getResource();
+                            IFile sourceFile = folder.getFile(path);
 
-		if (project != null) {
-			try {
-				if (project.hasNature(JavaCore.NATURE_ID)) {
-					javaProject = (IJavaProject) project.getNature(JavaCore.NATURE_ID);
-				}
+                            if (sourceFile != null && sourceFile.exists()) {
+                                return sourceFile;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-				if (javaProject == null && create) {
-					javaProject = JavaCore.create(project);
-				}
-			} catch (CoreException ignored) {
-			}
-		}
+        return targetFile;
+    }
 
-		return javaProject;
-	}
+    @Nullable
+    public static IJavaProject getJavaProject(IProject project, boolean create) {
+        IJavaProject javaProject = null;
+
+        if (project != null) {
+            try {
+                if (project.hasNature(JavaCore.NATURE_ID)) {
+                    javaProject = (IJavaProject) project.getNature(JavaCore.NATURE_ID);
+                }
+
+                if (javaProject == null && create) {
+                    javaProject = JavaCore.create(project);
+                }
+            } catch (CoreException ignored) {
+            }
+        }
+
+        return javaProject;
+    }
+
+    public static void logAndDisplay(IStatus status) {
+        logAndDisplay(Display.getDefault().getActiveShell(), status);
+    }
+
+    public static void logAndDisplay(Shell shell, IStatus status) {
+        logAndDisplay(shell, "Error", status);
+    }
+
+    public static void logAndDisplay(Shell shell, String title, IStatus status) {
+        SpringExtPlugin.getDefault().getLog().log(status);
+
+        if (status.getSeverity() == IStatus.INFO) {
+            MessageDialog.openInformation(shell, title, status.getMessage());
+        } else {
+            MessageDialog.openError(shell, title, status.getMessage());
+        }
+    }
+    
+    
 
 	public static IProject getSelectProject(IStructuredSelection selection) {
 		Object obj = selection.getFirstElement();
@@ -322,23 +352,6 @@ public class SpringExtPluginUtil {
 
 	}
 
-	public static void logAndDisplay(IStatus status) {
-		logAndDisplay(Display.getDefault().getActiveShell(), status);
-	}
-
-	public static void logAndDisplay(Shell shell, IStatus status) {
-		logAndDisplay(shell, "Error", status);
-	}
-
-	public static void logAndDisplay(Shell shell, String title, IStatus status) {
-		SpringExtPlugin.getDefault().getLog().log(status);
-
-		if (status.getSeverity() == IStatus.INFO) {
-			MessageDialog.openInformation(shell, title, status.getMessage());
-		} else {
-			MessageDialog.openError(shell, title, status.getMessage());
-		}
-	}
 
 	/**
 	 * 如果文件存在，则追加内容；否则，创建文件并写入内容
