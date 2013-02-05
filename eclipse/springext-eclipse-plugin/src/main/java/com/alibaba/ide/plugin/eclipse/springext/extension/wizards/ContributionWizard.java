@@ -25,38 +25,39 @@ import org.eclipse.ui.IWorkbench;
 
 /**
  * 新建Springext Contribution向导
- *
+ * 
  * @author zhiqing.ht
  * @author xuanxiao
+ * @author qianchao
  * @version 1.0.0, 2010-07-10
  */
 @SuppressWarnings("restriction")
 public class ContributionWizard extends Wizard implements INewWizard {
-    private ContributionWizardPage page = null;
+	private ContributionWizardPage	page	= null;
 
-    public void init(IWorkbench workbench, IStructuredSelection selection) {
-        setWindowTitle("New Springext Contribution");
-        Object obj = selection.getFirstElement();
-        page = new ContributionWizardPage("Contribution", "New Springext Contribution",
-                JavaPluginImages.DESC_WIZBAN_REFACTOR_TYPE, selection);
-        if (obj == null) {
-            page.setErrorMessage("没有选择新建的工程啊");
-            page.setPageComplete(false);
-        }
-    }
+	public void init(IWorkbench workbench, IStructuredSelection selection) {
+		setWindowTitle(Messages.ContributionWizard_new);
+		Object obj = selection.getFirstElement();
+		page = new ContributionWizardPage(Messages.ContributionWizard_contiribution, Messages.ContributionWizard_new,
+		        JavaPluginImages.DESC_WIZBAN_REFACTOR_TYPE, selection);
+		if (obj == null) {
+			page.setErrorMessage(Messages.ContributionWizard_noProject);
+			page.setPageComplete(false);
+		}
+	}
 
-    @Override
-    public void addPages() {
-        addPage(page);
-    }
+	@Override
+	public void addPages() {
+		addPage(page);
+	}
 
-    @Override
-    public boolean performFinish() {
-        if (page.validate()) {
-            page.createContribution();
-            return true;
-        }
-        return false;
-    }
+	@Override
+	public boolean performFinish() {
+		if (page.validate()) {
+			page.createContribution();
+			return true;
+		}
+		return false;
+	}
 
 }

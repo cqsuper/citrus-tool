@@ -74,7 +74,7 @@
             category="com.alibaba.eclipse.plugin.springext.extendtool.category"
             class="com.alibaba.ide.plugin.eclipse.springext.extension.wizards.ContributionWizard"
             finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
-            icon="icons/javaassist_co.gif"
+            icon="icons/contribution.gif"
             id="com.alibaba.eclipse.plugin.springext.extendtool.webx.wizard"
             name="Springext Contribution"
             preferredPerspectives="org.eclipse.jdt.ui.JavaPerspective,org.eclipse.jdt.ui.JavaBrowsingPerspective,org.eclipse.jdt.ui.JavaHierarchyPerspective"

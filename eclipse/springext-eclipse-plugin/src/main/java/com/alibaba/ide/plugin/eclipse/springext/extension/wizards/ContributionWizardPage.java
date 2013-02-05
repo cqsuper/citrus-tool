@@ -17,8 +17,6 @@
  */
 package com.alibaba.ide.plugin.eclipse.springext.extension.wizards;
 
-
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaElement;
@@ -29,14 +27,17 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.dialogs.FilteredTypesSelectionDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -50,151 +51,149 @@ import org.eclipse.ui.ide.IDE;
 import com.alibaba.citrus.springext.ConfigurationPoint;
 import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtConfigUtil;
 import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil;
+import static com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil.LINE_BR;
 
 /**
  * 新建Springext Contribution向导页
- *
+ * 
  * @author zhiqing.ht
  * @author xuanxiao
+ * @author qianchao
  * @version 1.0.0, 2010-07-10
  */
 @SuppressWarnings("restriction")
 public class ContributionWizardPage extends WizardPage {
-	public static final String LINE_BR = "\r\n";
-	
-	private IStructuredSelection selection  = null;
-	
-	private Text configurationPointText = null;
-	
-	private Button selectCpButton = null;
-	
-	private Text contributionNameText = null;
-	
-	private Text beanParserClassText = null;
-	
-	private Button beanParserButton = null;
-	
-	protected ContributionWizardPage(String pageName, String title,
-			ImageDescriptor titleImage,IStructuredSelection selection) {
+	private IStructuredSelection	selection	        = null;
+
+	private Text	             configurationPointText	= null;
+
+	private Button	             selectCpButton	        = null;
+
+	private Text	             contributionNameText	= null;
+
+	private Text	             beanParserClassText	= null;
+
+	private Button	             beanParserButton	    = null;
+
+	protected ContributionWizardPage(String pageName, String title, ImageDescriptor titleImage, IStructuredSelection selection) {
 		super(pageName, title, titleImage);
-		this.selection  = selection;
-		setDescription("新建Springext Contribution");
+		this.selection = selection;
+		setDescription(Messages.ContributionWizardPage_new);
 	}
 
 	public void createControl(Composite parent) {
-		Composite comp = new Composite(parent,SWT.NULL);
-		comp.setLayout(new GridLayout(2,false));
+		Composite comp = new Composite(parent, SWT.NULL);
+		comp.setLayout(new GridLayout(2, false));
 		setControl(comp);
-		Label label = new Label(comp,SWT.NULL);
-		label.setText("选择Configuration Point:");
+		Label label = new Label(comp, SWT.NULL);
+		label.setText(Messages.ContributionWizardPage_chooseCP);
 		GridData data = new GridData(GridData.FILL_HORIZONTAL);
 		data.grabExcessHorizontalSpace = true;
 		data.horizontalSpan = 2;
 		label.setLayoutData(data);
-		configurationPointText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		configurationPointText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		configurationPointText.setEnabled(false);
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		configurationPointText.setLayoutData(data);
-		selectCpButton = new Button(comp,SWT.NULL);
-		selectCpButton.setText("浏览...");
-		
-		label = new Label(comp,SWT.NULL);
-		label.setText("Contribution名称：（例如velocity-engine，通常用英文单数）");
+		selectCpButton = new Button(comp, SWT.NULL);
+		selectCpButton.setText(Messages.ContributionWizardPage_browser);
+
+		label = new Label(comp, SWT.NULL);
+		label.setText(Messages.ContributionWizardPage_exampleCN);
 		data = new GridData(GridData.FILL_HORIZONTAL);
-        data.grabExcessHorizontalSpace = true;
-        data.horizontalSpan = 2;
-        label.setLayoutData(data);
-		contributionNameText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		data.grabExcessHorizontalSpace = true;
+		data.horizontalSpan = 2;
+		label.setLayoutData(data);
+		contributionNameText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		contributionNameText.setLayoutData(data);
-		label = new Label(comp,SWT.NULL);
-		label.setText("Bean Definition Parser类：（该类必须实现BeanDefinitionParser接口）");
+		label = new Label(comp, SWT.NULL);
+		label.setText(Messages.ContributionWizardPage_bdpClass);
 		data = new GridData(GridData.FILL_HORIZONTAL);
-        data.grabExcessHorizontalSpace = true;
-        data.horizontalSpan = 2;
-        label.setLayoutData(data);
-		beanParserClassText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		data.grabExcessHorizontalSpace = true;
+		data.horizontalSpan = 2;
+		label.setLayoutData(data);
+		beanParserClassText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		beanParserClassText.setLayoutData(data);
-		beanParserButton = new Button(comp,SWT.NULL);
-		beanParserButton.setText("浏览...");
+		beanParserButton = new Button(comp, SWT.NULL);
+		beanParserButton.setText(Messages.ContributionWizardPage_browser);
 		initListeners();
-		
-		
+
 	}
 
 	private void initListeners() {
 		selectCpButton.addSelectionListener(new SelectionListener() {
-		
+
 			public void widgetSelected(SelectionEvent e) {
 				ConfigurationPoint[] points = SpringExtConfigUtil.getAllConfigurationPoints(SpringExtPluginUtil.getSelectProject(selection));
-				ElementListSelectionDialog dialog = new ElementListSelectionDialog(getShell(),new ConfigurationPointLabelProvider());
-				dialog.setTitle("选择Configuration Point");
+				ElementListSelectionDialog dialog = new ElementListSelectionDialog(getShell(), new ConfigurationPointLabelProvider());
+				dialog.setTitle(Messages.ContributionWizardPage_chooseCP); //$NON-NLS-1$
 				dialog.setMultipleSelection(false);
-				dialog.setMessage("选择Configuration point");
+				dialog.setMessage(Messages.ContributionWizardPage_chooseCP); //$NON-NLS-1$
 				dialog.setElements(points);
-				if(dialog.open() == Window.OK){
+				if (dialog.open() == Window.OK) {
 					Object[] objs = dialog.getResult();
-					if(objs != null && objs.length > 0){
+					if (objs != null && objs.length > 0) {
 						Object obj = objs[0];
-						ConfigurationPoint point = (ConfigurationPoint)obj;
+						ConfigurationPoint point = (ConfigurationPoint) obj;
 						configurationPointText.setData(point);
 						configurationPointText.setText(point.getName());
 					}
 				}
 			}
-		
+
 			public void widgetDefaultSelected(SelectionEvent e) {
-				
+
 			}
 		});
 		beanParserButton.addSelectionListener(new SelectionListener() {
-		
+
 			public void widgetSelected(SelectionEvent e) {
 				IProject p = SpringExtPluginUtil.getSelectProject(selection);
-				if(p == null){
-					return ;
+				if (p == null) {
+					return;
 				}
-				IJavaElement[] elements= new IJavaElement[] { JavaCore.create(p)};
-				IJavaSearchScope scope= SearchEngine.createJavaSearchScope(elements);
-				
-				FilteredTypesSelectionDialog dialog= new FilteredTypesSelectionDialog(getShell(), false,
-						getWizard().getContainer(), scope, IJavaSearchConstants.CLASS);
-					dialog.setTitle("选择存在的Bean Definition Parser类"); 
-					dialog.setMessage("选择存在的Bean Definition Parser类，该类必须实现BeanDefinitionParser接口");
-					if(Window.OK == dialog.open()){
-						Object obj = dialog.getFirstResult();
-						IType type = (IType)obj;
-						beanParserClassText.setText(type.getFullyQualifiedName());
+				IJavaElement[] elements = new IJavaElement[] { JavaCore.create(p) };
+				IJavaSearchScope scope = SearchEngine.createJavaSearchScope(elements);
+
+				FilteredTypesSelectionDialog dialog = new FilteredTypesSelectionDialog(getShell(), false, getWizard().getContainer(),
+				        scope, IJavaSearchConstants.CLASS);
+				dialog.setTitle(Messages.ContributionWizardPage_chooseBDP);
+				dialog.setMessage(Messages.ContributionWizardPage_chooseBDPDetail);
+				if (Window.OK == dialog.open()) {
+					Object obj = dialog.getFirstResult();
+					IType type = (IType) obj;
+					beanParserClassText.setText(type.getFullyQualifiedName());
 				}
 			}
-		
+
 			public void widgetDefaultSelected(SelectionEvent e) {
-				
+
 			}
 		});
-		
+
 	}
 
 	public boolean validate() {
 		String cPoint = configurationPointText.getText();
-		if( null == cPoint || cPoint.trim().equals("")){
-			setErrorMessage(" 请选择Configuration Point!");
+		if (null == cPoint || cPoint.trim().equals("")) { //$NON-NLS-1$
+			setErrorMessage(Messages.ContributionWizardPage_chooseCP); //$NON-NLS-1$
 			return false;
 		}
 		String cName = contributionNameText.getText();
-		if( null == cName || cName.trim().equals("")){
-			setErrorMessage("Contribution Name 不能为空!");
+		if (null == cName || cName.trim().equals("")) { //$NON-NLS-1$
+			setErrorMessage(Messages.ContributionWizardPage_cnNotNull);
 			return false;
-		}else {
-			if(cName.indexOf("/") >= 0){
-				setErrorMessage("非法的Contribution Name ,不能有/等非法字符!");
+		} else {
+			if (cName.indexOf("/") >= 0) { //$NON-NLS-1$
+				setErrorMessage(Messages.ContributionWizardPage_invalidCN1);
 				return false;
 			}
 		}
 		String parserName = beanParserClassText.getText();
-		if( null == parserName || parserName.trim().equals("")){
-			setErrorMessage(" Bean definition parser类不能为空!");
+		if (null == parserName || parserName.trim().equals("")) { //$NON-NLS-1$
+			setErrorMessage(Messages.ContributionWizardPage_invalidCN2);
 			return false;
 		}
 		return true;
@@ -204,42 +203,45 @@ public class ContributionWizardPage extends WizardPage {
 		IProject project = SpringExtPluginUtil.getSelectProject(selection);
 		SpringExtPluginUtil.checkSrcMetaExsit(project);
 		boolean sucess = createParserClz();
-		if(sucess){
+		if (sucess) {
 			sucess = createBeanDefParserFile();
-			if(sucess){
+			if (sucess) {
 				createXSDFile();
 			}
 		}
 	}
 
 	private void createXSDFile() {
-		String parent = "/src/main/resources/META-INF/"+configurationPointText.getText();
+		String parent = "/src/main/resources/META-INF/" + configurationPointText.getText(); //$NON-NLS-1$
 		String contributionName = contributionNameText.getText();
-		String fileName = contributionName+".xsd";
+		String fileName = contributionName + ".xsd"; //$NON-NLS-1$
 		String pointName = configurationPointText.getText();
-		String[] pointNames = pointName.split("/");
+		String[] pointNames = pointName.split("/"); //$NON-NLS-1$
 		StringBuilder sb = new StringBuilder();
-		for(String point: pointNames){
-		    char c = point.charAt(0);
-		    char cs = Character.toUpperCase(c);
-		    sb.append(cs+point.substring(1));
+		for (String point : pointNames) {
+			char c = point.charAt(0);
+			char cs = Character.toUpperCase(c);
+			sb.append(cs + point.substring(1));
 		}
 		char c = Character.toUpperCase(contributionName.charAt(0));
-		sb.append(c+contributionName.substring(1)+"Type");
-		String content = SpringExtPluginUtil.formatXsd("webx-xsd-template.xml", new String[]{contributionName,sb.toString()});
-		SpringExtPluginUtil.createFileIfNesscary(parent,fileName , content, selection, getShell(), "创建Webx XSD 文件...", getContainer());
-		
+		sb.append(c + contributionName.substring(1) + "Type"); //$NON-NLS-1$
+		String content = SpringExtPluginUtil.formatXsd("webx-xsd-template.xml", new String[] { contributionName, sb.toString() }); //$NON-NLS-1$
+		SpringExtPluginUtil.createFileIfNesscary(parent, fileName, content, selection, getShell(), Messages.ContributionWizardPage_newXsd,
+		        getContainer());
+
 	}
 
 	private boolean createBeanDefParserFile() {
 		try {
 			String pointName = configurationPointText.getText();
-			String fileName = pointName.replaceAll("/", "-")+".bean-definition-parsers";
+			String fileName = pointName.replaceAll("/", "-") + ".bean-definition-parsers"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			String contributionName = contributionNameText.getText();
 			String parserName = beanParserClassText.getText();
-			String content = contributionName+"="+parserName;
-			SpringExtPluginUtil.createFileIfNesscary("/src/main/resources/META-INF",fileName , content, selection, getShell(), "创建Bean Parser File...", getContainer());
-			
+			String content = contributionName + "=" + parserName; //$NON-NLS-1$
+			SpringExtPluginUtil
+			        .createFileIfNesscary(
+			                "/src/main/resources/META-INF", fileName, content, selection, getShell(), Messages.ContributionWizardPage_newBPF, getContainer()); //$NON-NLS-1$
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -247,54 +249,67 @@ public class ContributionWizardPage extends WizardPage {
 		return true;
 	}
 
-	private boolean  createParserClz() {
+	private boolean createParserClz() {
 		String parserName = beanParserClassText.getText();
 		IJavaProject project = SpringExtPluginUtil.getSelectJavaProject(selection);
 		try {
 			IType type = project.findType(parserName);
-			if(type == null){
-				
-				int index = parserName.lastIndexOf(".");
-				String packageName = "";
+			if (type == null) {
+
+				int index = parserName.lastIndexOf("."); //$NON-NLS-1$
+				String packageName = ""; //$NON-NLS-1$
 				String className = parserName;
-				if(index > 0){
-					packageName = parserName.substring(0,index);
-					className = parserName.substring(index+1);
+				if (index > 0) {
+					packageName = parserName.substring(0, index);
+					className = parserName.substring(index + 1);
 				}
-				String filePath = packageName.replaceAll("\\.", "/");
+				String filePath = packageName.replaceAll("\\.", "/"); //$NON-NLS-1$ //$NON-NLS-2$
 				String content = null;
-				if(packageName.length() == 0){
-				    content = "import com.alibaba.citrus.springext.support.parser.AbstractSingleBeanDefinitionParser; "
-				    	+ LINE_BR + LINE_BR
-				    	+ "public class "+className+" extends AbstractSingleBeanDefinitionParser<Object> {"
-				    	+ LINE_BR + LINE_BR 
-				    	+ "}";
-				}else{
-				    content = "package "+packageName+"; "
-				    	+ LINE_BR + LINE_BR
-				    	+"import com.alibaba.citrus.springext.support.parser.AbstractSingleBeanDefinitionParser; "
-				    	+ LINE_BR + LINE_BR
-				    	+"public class "+className+" extends AbstractSingleBeanDefinitionParser<Object> {"
-	                	+ LINE_BR + LINE_BR 
-	                	+ "}";
+				if (packageName.length() == 0) {
+					content = "import com.alibaba.citrus.springext.support.parser.AbstractSingleBeanDefinitionParser; " //$NON-NLS-1$
+					        + LINE_BR + LINE_BR + "public class " + className + " extends AbstractSingleBeanDefinitionParser<Object> {" //$NON-NLS-1$ //$NON-NLS-2$
+					        + LINE_BR + LINE_BR + "}"; //$NON-NLS-1$
+				} else {
+					content = "package " + packageName + "; " //$NON-NLS-1$ //$NON-NLS-2$
+					        + LINE_BR + LINE_BR + "import com.alibaba.citrus.springext.support.parser.AbstractSingleBeanDefinitionParser; " //$NON-NLS-1$
+					        + LINE_BR + LINE_BR + "public class " + className + " extends AbstractSingleBeanDefinitionParser<Object> {" //$NON-NLS-1$ //$NON-NLS-2$
+					        + LINE_BR + LINE_BR + "}"; //$NON-NLS-1$
 				}
-			
-				SpringExtPluginUtil.createFileIfNesscary("/src/main/java/"+filePath, className+".java", content, selection, getShell(), "创建Bean Parser Class...", getContainer());
-				IFile file = SpringExtPluginUtil.getFileHandle("/src/main/java/"+filePath, className+".java", selection);
-	            if(file.exists()){
-	                IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
-	            }
-			}else{
+
+				SpringExtPluginUtil
+				        .createFileIfNesscary(
+				                "/src/main/java/" + filePath, className + ".java", content, selection, getShell(), Messages.ContributionWizardPage_newBPC, getContainer()); //$NON-NLS-1$ //$NON-NLS-2$
+				IFile file = SpringExtPluginUtil.getFileHandle("/src/main/java/" + filePath, className + ".java", selection); //$NON-NLS-1$ //$NON-NLS-2$
+				if (file.exists()) {
+					IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
+				}
+			} else {
 				return true;
 			}
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 			return false;
-		}catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
 		return true;
+	}
+
+	class ConfigurationPointLabelProvider extends LabelProvider {
+
+		public String getText(Object element) {
+			if (element instanceof ConfigurationPoint) {
+				ConfigurationPoint point = (ConfigurationPoint) element;
+				return point.getName();
+			}
+			return super.getText(element);
+		}
+
+		@Override
+		public Image getImage(Object element) {
+			return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_QUICK_FIX);
+		}
 	}
 
 }

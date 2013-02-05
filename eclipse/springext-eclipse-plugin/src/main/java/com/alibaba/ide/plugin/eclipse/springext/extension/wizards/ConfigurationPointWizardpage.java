@@ -45,131 +45,127 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.undo.CreateFileOperation;
 import org.eclipse.ui.ide.undo.WorkspaceUndoUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil;
 
-
 /**
- * �½�Springext Configuration Point��ҳ
- *
+ * 新建Springext Configuration Point向导页
+ * 
  * @author zhiqing.ht
  * @author xuanxiao
+ * @author qianchao
  * @version 1.0.0, 2010-07-10
  */
 public class ConfigurationPointWizardpage extends WizardPage {
-	
-	public static final String LINE_BR = "\r\n";
+	private static final Logger	 log	            = LoggerFactory.getLogger(ConfigurationPointWizardpage.class);
+	private IStructuredSelection	selection	    = null;
 
-	private IStructuredSelection selection = null;
-	
-	private Text cpNameText = null;
-	
-	private Text tNSNameText = null;
-	
-	private Text defaultElementText = null;
-	
-	private Text nsPrefixText = null;
-	
-	private static final String DEFAULT_PREFIX = "http://www.alibaba.com/schema/";
-	
-	protected ConfigurationPointWizardpage(String pageName, String title,
-			ImageDescriptor titleImage,IStructuredSelection selection) {
+	private Text	             cpNameText	        = null;
+
+	private Text	             tNSNameText	    = null;
+
+	private Text	             defaultElementText	= null;
+
+	private Text	             nsPrefixText	    = null;
+
+	private static final String	 DEFAULT_PREFIX	    = "http://www.alibaba.com/schema/";	                       //$NON-NLS-1$
+
+	protected ConfigurationPointWizardpage(String pageName, String title, ImageDescriptor titleImage, IStructuredSelection selection) {
 		super(pageName, title, titleImage);
 		this.selection = selection;
-		setDescription("新建Configuration Point。它代表了一个扩展点，\n" +
-				"其他开发者可以创建Contribution捐献给它，从而扩展它的功能。");
+		setDescription(Messages.ConfigurationPointWizardpage_new);
 	}
 
 	public void createControl(Composite parent) {
-		
-		Composite comp = new Composite(parent,SWT.NULL);
-		comp.setLayout(new GridLayout(1,false));
+
+		Composite comp = new Composite(parent, SWT.NULL);
+		comp.setLayout(new GridLayout(1, false));
 		setControl(comp);
-		Label l = new Label(comp,SWT.NULL);
-		l.setText("Configuration Point名称：（格式形如：xxx或services/template/engines - 通常用英文复数）");
-		cpNameText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		Label l = new Label(comp, SWT.NULL);
+		l.setText(Messages.ConfigurationPointWizardpage_cname);
+		cpNameText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		GridData data = new GridData(GridData.FILL_HORIZONTAL);
 		cpNameText.setLayoutData(data);
-		l = new Label(comp,SWT.NULL);
-		l.setText("Target Namespace：（必须以Configuration Point名称结尾）");
-		tNSNameText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		l = new Label(comp, SWT.NULL);
+		l.setText(Messages.ConfigurationPointWizardpage_targetNameSpace);
+		tNSNameText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		tNSNameText.setLayoutData(data);
-		l = new Label(comp,SWT.NULL);
-		l.setText("Default Element：（可选）");
-		defaultElementText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		l = new Label(comp, SWT.NULL);
+		l.setText(Messages.ConfigurationPointWizardpage_dElement);
+		defaultElementText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		defaultElementText.setLayoutData(data);
-		l = new Label(comp,SWT.NULL);
-		l.setText("Namespace 推荐前缀：（可选）");
-		nsPrefixText = new Text(comp,SWT.SINGLE | SWT.BORDER);
+		l = new Label(comp, SWT.NULL);
+		l.setText(Messages.ConfigurationPointWizardpage_namespacePrefix);
+		nsPrefixText = new Text(comp, SWT.SINGLE | SWT.BORDER);
 		nsPrefixText.setLayoutData(data);
 		initListeners();
 	}
-	
+
 	private void initListeners() {
 		cpNameText.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				tNSNameText.setText(DEFAULT_PREFIX+cpNameText.getText());
+				tNSNameText.setText(DEFAULT_PREFIX + cpNameText.getText());
 			}
 		});
 	}
 
-	public boolean validate(){
+	public boolean validate() {
 		String cpName = cpNameText.getText();
-		if( null == cpName || cpName.trim().equals("")){
-			setErrorMessage("Configuration Point Name ����Ϊ�գ�");
+		if (null == cpName || cpName.trim().equals("")) { //$NON-NLS-1$
+			setErrorMessage(Messages.ConfigurationPointWizardpage_cnNotNull);
 			return false;
-		}else {
+		} else {
 
-			if( cpName.startsWith("/") || cpName.startsWith("\\") ){
-				setErrorMessage("Configuration Point Name 格式必须为xxx或xxx/yyy/zzz !");
+			if (cpName.startsWith("/") || cpName.startsWith("\\")) { //$NON-NLS-1$ //$NON-NLS-2$
+				setErrorMessage(Messages.ConfigurationPointWizardpage_invalid);
 				return false;
 			}
-			if(cpName.indexOf("\\") >= 0 ){
-				setErrorMessage("非法的Configuration Point Name ,不能有'\\'非法字符!");
+			if (cpName.indexOf("\\") >= 0) { //$NON-NLS-1$
+				setErrorMessage(Messages.ConfigurationPointWizardpage_wrong1);
 				return false;
 			}
 		}
 		String tNSName = tNSNameText.getText();
-		if( null == tNSName || tNSName.trim().equals("")){
-			setErrorMessage("Target Namespace 不能为空！");
+		if (null == tNSName || tNSName.trim().equals("")) { //$NON-NLS-1$
+			setErrorMessage(Messages.ConfigurationPointWizardpage_tnNotNull);
 			return false;
-		}else {
-			if(!tNSName.trim().endsWith(cpName)){
-				setErrorMessage("Target Namespace 必须以"+cpName+"结尾！");
+		} else {
+			if (!tNSName.trim().endsWith(cpName)) {
+				setErrorMessage(Messages.ConfigurationPointWizardpage_tnMust + cpName + Messages.ConfigurationPointWizardpage_cpNameEnd);
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
-	
-	public void createConfigurationPoint(){
+
+	public void createConfigurationPoint() {
 		IProject project = SpringExtPluginUtil.getSelectProject(selection);
 		SpringExtPluginUtil.checkSrcMetaExsit(project);
-		final IFile file = getFileHandle("spring.configuration-points");
+		final IFile file = getFileHandle("spring.configuration-points"); //$NON-NLS-1$
 		String cpName = cpNameText.getText();
 		String tNSName = tNSNameText.getText();
 		String defaultElement = defaultElementText.getText();
 		String nsPrefix = nsPrefixText.getText();
-		String tempString = cpName+"="+tNSName;
-		if(defaultElement != null && defaultElement.length() > 0){
-		    tempString += "; defaultElement="+defaultElement;
+		String tempString = cpName + "=" + tNSName; //$NON-NLS-1$
+		if (defaultElement != null && defaultElement.length() > 0) {
+			tempString += "; defaultElement=" + defaultElement; //$NON-NLS-1$
 		}
-		if(nsPrefix != null && nsPrefix.length() > 0){
-		    tempString +=  "; nsPrefix="+nsPrefix;
+		if (nsPrefix != null && nsPrefix.length() > 0) {
+			tempString += "; nsPrefix=" + nsPrefix; //$NON-NLS-1$
 		}
 		final String text = tempString;
-		if(file.exists()){
+		if (file.exists()) {
 			FileOutputStream outStream = null;
 			try {
-				outStream = new FileOutputStream(file.getLocation().toString(),true);
-				outStream.write((LINE_BR+text).getBytes());
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}finally{
-				if(outStream != null){
+				outStream = new FileOutputStream(file.getLocation().toString(), true);
+				outStream.write((SpringExtPluginUtil.LINE_BR + text).getBytes());
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+			} finally {
+				if (outStream != null) {
 					try {
 						outStream.close();
 					} catch (IOException e) {
@@ -177,47 +173,39 @@ public class ConfigurationPointWizardpage extends WizardPage {
 				}
 			}
 			try {
-				SpringExtPluginUtil.getSelectProject(selection).getFolder("/src/main/resources/META-INF").refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+				SpringExtPluginUtil.getSelectProject(selection)
+				        .getFolder("/src/main/resources/META-INF").refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor()); //$NON-NLS-1$
 			} catch (CoreException e) {
-				e.printStackTrace();
+				log.error(e.getMessage(), e);
 			}
-			
-		
-		}else{
+
+		} else {
 			IRunnableWithProgress op = new IRunnableWithProgress() {
 
-				public void run(IProgressMonitor monitor)
-						throws InvocationTargetException, InterruptedException {
-					CreateFileOperation op = new CreateFileOperation(file,
-							null, new ByteArrayInputStream(text.getBytes()),
-							"新建Configuration point...");
-						try {
-							PlatformUI.getWorkbench().getOperationSupport()
-									.getOperationHistory().execute(
-											op,
-											monitor,
-											WorkspaceUndoUtil
-													.getUIInfoAdapter(getShell()));
-						} catch (ExecutionException e) {
-							e.printStackTrace();
-						}
+				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+					CreateFileOperation op = new CreateFileOperation(file, null, new ByteArrayInputStream(text.getBytes()),
+					        Messages.ConfigurationPointWizardpage_NewC);
+					try {
+						PlatformUI.getWorkbench().getOperationSupport().getOperationHistory()
+						        .execute(op, monitor, WorkspaceUndoUtil.getUIInfoAdapter(getShell()));
+					} catch (ExecutionException e) {
+						log.error(e.getMessage(), e);
+					}
 				}
-				
+
 			};
 			try {
-				getContainer().run(true, true,op);
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				getContainer().run(true, true, op);
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
 			}
-			
+
 		}
 	}
-	
+
 	private IFile getFileHandle(String xsdName) {
 		IProject project = SpringExtPluginUtil.getSelectProject(selection);
-		IFile file = project.getFile("/src/main/resources/META-INF/"+xsdName);
+		IFile file = project.getFile("/src/main/resources/META-INF/" + xsdName); //$NON-NLS-1$
 		return file;
 	}
 

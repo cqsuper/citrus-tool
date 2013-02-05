@@ -24,35 +24,37 @@ import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 
 /**
- * �½�Springext Configuration Point��
- *
+ * 新建Springext Configuration Point向导
+ * 
  * @author zhiqing.ht
  * @author xuanxiao
+ * @author qianchao
  * @version 1.0.0, 2010-07-10
  */
 @SuppressWarnings("restriction")
 public class ConfigurationPointWizard extends Wizard implements INewWizard {
 
-	
-	private ConfigurationPointWizardpage page= null;
+	private ConfigurationPointWizardpage	page	= null;
 
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
-		setWindowTitle("New Springext Configuration Point");
+		setWindowTitle(Messages.ConfigurationPointWizard_new);
 		Object obj = selection.getFirstElement();
-		page = new ConfigurationPointWizardpage("Configuration point","New Springext Configuration Point",JavaPluginImages.DESC_WIZBAN_REFACTOR_TYPE,selection);
-		if(obj == null){
-			page.setErrorMessage("没有选择新建的工程啊");
+		page = new ConfigurationPointWizardpage(Messages.ConfigurationPointWizard_configuration, Messages.ConfigurationPointWizard_new,
+		        JavaPluginImages.DESC_WIZBAN_REFACTOR_TYPE, selection);
+		if (obj == null) {
+			page.setErrorMessage(Messages.ConfigurationPointWizard_noProject);
 			page.setPageComplete(false);
 		}
 	}
+
 	@Override
 	public void addPages() {
 		addPage(page);
 	}
-	
+
 	@Override
 	public boolean performFinish() {
-		if(page.validate()){
+		if (page.validate()) {
 			page.createConfigurationPoint();
 			return true;
 		}
