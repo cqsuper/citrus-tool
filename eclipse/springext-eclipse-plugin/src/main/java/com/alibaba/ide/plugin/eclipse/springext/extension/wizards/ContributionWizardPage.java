@@ -50,8 +50,8 @@ import org.eclipse.ui.ide.IDE;
 
 import com.alibaba.citrus.springext.ConfigurationPoint;
 import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtConfigUtil;
-import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil;
-import static com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil.LINE_BR;
+import com.alibaba.ide.plugin.eclipse.springext.SpringExtPluginUtil;
+import static com.alibaba.ide.plugin.eclipse.springext.SpringExtPluginUtil.LINE_BR;
 
 /**
  * 新建Springext Contribution向导页

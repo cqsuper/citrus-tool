@@ -48,7 +48,7 @@ import org.eclipse.ui.ide.undo.WorkspaceUndoUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.ide.plugin.eclipse.springext.util.SpringExtPluginUtil;
+import com.alibaba.ide.plugin.eclipse.springext.SpringExtPluginUtil;
 
 /**
  * 新建Springext Configuration Point向导页
